@@ -1,4 +1,4 @@
-# [![img](https://github.com/nutonomy/nuscenes-devkit/raw/master/docs/nutonomy-logo-big-r.svg)](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/nutonomy-logo-big-r.svg) nuScenes™ devkit
+# nuScenes™ devkit
 
 This is a self-maintained version of [nuscenes-devkit](https://github.com/nutonomy/nuscenes-devkit)
 
@@ -6,6 +6,7 @@ This is a self-maintained version of [nuscenes-devkit](https://github.com/nutono
 
 ```bash
 git clone https://github.com/WaterHyacinthInNANHU/nuscenes-devkit
+cd nuscenes-devkit
 pip install .
 ```
 
