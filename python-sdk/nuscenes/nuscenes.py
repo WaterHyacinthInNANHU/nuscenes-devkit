@@ -9,6 +9,8 @@ import sys
 import time
 from datetime import datetime
 from typing import Tuple, List, Iterable
+import pickle
+from pathlib import Path
 
 import cv2
 import matplotlib.pyplot as plt
@@ -45,14 +47,29 @@ class NuScenes:
                  version: str = 'v1.0-mini',
                  dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
-                 map_resolution: float = 0.1):
+                 map_resolution: float = 0.1,
+                 force_reinit: bool = False):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v1.0", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
+        :force_reinit: Whether to reinitialize the class even if a pickle exists.
         :param map_resolution: Resolution of maps (meters).
         """
+        # load from pickle if exists
+        pkl_path = Path(dataroot) / f'NuScenes_{version}.pkl'
+        if pkl_path.exists() and not force_reinit:
+            with open(pkl_path, 'rb') as f:
+                inst = pickle.load(f)
+            if not isinstance(inst, NuScenes):
+                raise TypeError('Unpickled object is not of type {}'.format(NuScenes))
+            for k in inst.__dict__.keys():
+                setattr(self, k, getattr(inst, k))
+            if verbose:
+                print(f'loaded nuScenes-{version} from {pkl_path}')
+            return
+        
         self.version = version
         self.dataroot = dataroot
         self.verbose = verbose
@@ -125,7 +142,17 @@ class NuScenes:
 
         # Initialize NuScenesExplorer class.
         self.explorer = NuScenesExplorer(self)
+        
+        if force_reinit:
+            if pkl_path.exists():
+                os.remove(pkl_path)
 
+        if not pkl_path.exists():
+            with open(pkl_path, 'wb') as f:
+                pickle.dump(self, f)
+            if self.verbose:
+                print(f'nuScenes-{self.version} pickled at {pkl_path}')
+        
     @property
     def table_root(self) -> str:
         """ Returns the folder where the tables are stored for the relevant version. """
