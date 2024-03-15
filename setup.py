@@ -52,7 +52,7 @@ setuptools.setup(
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
-    package_data={'': ['*.json']},
+    package_data={'': ['*.json', '*.yaml']},
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python :: 3.6',

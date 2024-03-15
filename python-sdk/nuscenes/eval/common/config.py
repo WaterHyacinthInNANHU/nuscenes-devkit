@@ -4,6 +4,7 @@
 import json
 import os
 from typing import Union
+import yaml
 
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.tracking.data_classes import TrackingConfig
@@ -35,3 +36,34 @@ def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingCo
         raise Exception('Error: Invalid config file name: %s' % configuration_name)
 
     return cfg
+
+
+def update_dict(src, dst):
+    for key in src:
+        if key in dst.keys():
+            if isinstance(src[key], dict):
+                update_dict(src[key], dst[key])
+            else:
+                dst[key] = src[key]
+
+
+def update_loader_config(config: dict) -> None:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(this_dir, 'config.yaml')
+    # load config from yaml
+    with open(cfg_path, 'r') as f:
+        config_ori = yaml.load(f, Loader=yaml.SafeLoader)
+    # update configs
+    update_dict(config, config_ori)
+    # write updated config to yaml
+    with open(cfg_path, 'w') as f:
+        yaml.dump(config_ori, f)
+
+
+def get_loader_config() -> dict:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(this_dir, 'config.yaml')
+    # load config from yaml
+    with open(cfg_path, 'r') as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+    return config

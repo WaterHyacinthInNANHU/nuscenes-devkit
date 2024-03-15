@@ -2,7 +2,7 @@
 # Code written by Oscar Beijbom, 2019.
 
 import json
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import numpy as np
 import tqdm
@@ -10,6 +10,7 @@ from pyquaternion import Quaternion
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.common.config import get_loader_config
 from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.eval.tracking.data_classes import TrackingBox
@@ -93,13 +94,38 @@ def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> 
             'Error: You are trying to evaluate on the test set but you do not have the annotations!'
 
     sample_tokens = []
-    for sample_token in sample_tokens_all:
-        scene_token = nusc.get('sample', sample_token)['scene_token']
-        scene_record = nusc.get('scene', scene_token)
-        if scene_record['name'] in splits[eval_split]:
-            sample_tokens.append(sample_token)
+    ###############################################################
+    # original code
+    ###############################################################
+    # for sample_token in sample_tokens_all:
+    #     scene_token = nusc.get('sample', sample_token)['scene_token']
+    #     scene_record = nusc.get('scene', scene_token)
+    #     if scene_record['name'] in splits[eval_split]:
+    #         sample_tokens.append(sample_token)
+    ###############################################################
 
     all_annotations = EvalBoxes()
+
+    ###############################################################
+    # filter sample tokens
+    # modify the sample_tokens to only include the first n samples, n=10 for now
+    # @author: ruijiezzz
+    ###############################################################
+    cfg_loader = get_loader_config()
+    def load_samples_in_scene(scene: str) -> List[dict]:
+        scene = nusc.get('scene', scene)
+        sample = nusc.get('sample', scene['first_sample_token'])
+        sample_list = [sample]
+        while sample['next'] != '':
+            sample = nusc.get('sample', sample['next'])
+            sample_list.append(sample)
+        return sample_list
+    for scene in splits[eval_split]:
+        scene_token = nusc.field2token('scene', 'name', scene)[0]
+        sample_list_i = load_samples_in_scene(scene_token)
+        for sample in sample_list_i[cfg_loader['scene_starts_at']:cfg_loader['scene_ends_at']]:
+            sample_tokens.append(sample['token'])
+    ###############################################################
 
     # Load annotations and filter predictions and annotations.
     tracking_id_set = set()
